@@ -16,6 +16,12 @@
 #include <esp_lcd_panel_ops.h>
 #include <driver/spi_common.h>
 
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
+
 #if defined(LCD_TYPE_ILI9341_SERIAL)
 #include "esp_lcd_ili9341.h"
 #endif
@@ -80,6 +86,9 @@ private:
     }
 
     void InitializeLcdDisplay() {
+        #if CONFIG_LCD_ENABLE_DEBUG_LOG
+        esp_log_level_set(TAG, ESP_LOG_DEBUG);
+        #endif
         esp_lcd_panel_io_handle_t panel_io = nullptr;
         esp_lcd_panel_handle_t panel = nullptr;
         // 液晶屏控制IO初始化
@@ -99,6 +108,7 @@ private:
         esp_lcd_panel_dev_config_t panel_config = {};
         panel_config.reset_gpio_num = DISPLAY_RST_PIN;
         panel_config.rgb_ele_order = DISPLAY_RGB_ORDER;
+        panel_config.flags.reset_active_high = 0,
         panel_config.bits_per_pixel = 16;
 #if defined(LCD_TYPE_ILI9341_SERIAL)
         ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(panel_io, &panel_config, &panel));
