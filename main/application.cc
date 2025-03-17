@@ -311,6 +311,9 @@ void Application::StopListening() {
     });
 }
 
+void Application::Ectest() {
+    auto& board = Board::GetInstance();
+}
 void Application::Start() {
     auto& board = Board::GetInstance();
     SetDeviceState(kDeviceStateStarting);

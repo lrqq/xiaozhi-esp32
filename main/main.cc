@@ -25,6 +25,6 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     // Launch the application
-    Application::GetInstance().Start();
+    Application::GetInstance().Ectest();
     // The main thread will exit and release the stack memory
 }

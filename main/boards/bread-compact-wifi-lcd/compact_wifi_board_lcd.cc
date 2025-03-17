@@ -4,6 +4,7 @@
 #include "system_reset.h"
 #include "application.h"
 #include "button.h"
+#include "ec11.h"
 #include "config.h"
 #include "iot/thing_manager.h"
 #include "led/single_led.h"
@@ -67,6 +68,11 @@ static const gc9a01_lcd_init_cmd_t gc9107_lcd_init_cmds[] = {
 
 LV_FONT_DECLARE(font_puhui_16_4);
 LV_FONT_DECLARE(font_awesome_16_4);
+
+// 按键回调函数
+void ButtonPressedCallback() {
+    ESP_LOGI(TAG, "Button Pressed!");
+}
 
 class CompactWifiBoardLCD : public WifiBoard {
 private:
@@ -142,7 +148,36 @@ private:
     }
 
 
- 
+    //初始化编码器
+    void InitializeEc11() {
+        // 配置实例
+        EC11Encoder::Config cfg{
+            .gpioA = GPIO_NUM_19,
+            .gpioB = GPIO_NUM_21,
+            .lowLimit = -2000,
+            .highLimit = 2000
+        };
+
+        // 创建编码器对象
+        EC11Encoder encoder(cfg);
+        
+        // 注册事件回调
+        encoder.registerEventCallback([](int pos) {
+            ESP_LOGI(TAG, "Position reached: %d", pos);
+        });
+
+        // 主循环
+        while (true) {
+            encoder.pollEvents();
+            const int current = encoder.getCount();
+            if (current != 0) {
+                ESP_LOGI(TAG, "Current count: %d", current);
+                encoder.clearCount();
+            }
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+
+    } 
     void InitializeButtons() {
         boot_button_.OnClick([this]() {
             auto& app = Application::GetInstance();
@@ -168,7 +203,8 @@ public:
         boot_button_(BOOT_BUTTON_GPIO) {
         InitializeSpi();
         InitializeLcdDisplay();
-        InitializeButtons();
+        //InitializeButtons();
+        InitializeEc11();
         InitializeIot();
         if (DISPLAY_BACKLIGHT_PIN != GPIO_NUM_NC) {
             GetBacklight()->RestoreBrightness();

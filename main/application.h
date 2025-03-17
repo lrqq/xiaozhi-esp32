@@ -54,6 +54,7 @@ public:
     Application(const Application&) = delete;
     Application& operator=(const Application&) = delete;
 
+    void Ectest();
     void Start();
     DeviceState GetDeviceState() const { return device_state_; }
     bool IsVoiceDetected() const { return voice_detected_; }
