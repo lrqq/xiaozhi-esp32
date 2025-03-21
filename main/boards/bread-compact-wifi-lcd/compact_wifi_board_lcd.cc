@@ -16,6 +16,8 @@
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
 #include <driver/spi_common.h>
+#include <lvgl.h>
+
 
 #if CONFIG_LCD_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
@@ -74,11 +76,16 @@ void ButtonPressedCallback() {
     ESP_LOGI(TAG, "Button Pressed!");
 }
 
+
+
+
 class CompactWifiBoardLCD : public WifiBoard {
 private:
  
     Button boot_button_;
+    EC11Encoder* ec11;
     LcdDisplay* display_;
+    int32_t last_count_ = 0;  // 用于保存上一次的编码器计数值
 
     void InitializeSpi() {
         spi_bus_config_t buscfg = {};
@@ -148,6 +155,34 @@ private:
     }
 
 
+    // 编码器事件循环
+    void lvindev_loop()
+    {
+        while(true)
+        {
+            ec11->pollEvents();
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+    }
+    void encoder_read(lv_indev_t * indev_drv, lv_indev_data_t * data)
+    {
+        int32_t current_count = ec11->getCount();  // 获取当前编码器的计数值
+        data->enc_diff = current_count - last_count_;  // 计算增量值
+        last_count_ = current_count;  // 更新上一次的计数值
+        //ESP_LOGI("encoder", "get input %d", data->enc_diff);
+        if(gpio_get_level(GPIO_NUM_20))
+        {
+            data->state = LV_INDEV_STATE_RELEASED;
+        } 
+        else
+        {
+            data->state = LV_INDEV_STATE_PRESSED;
+        } 
+    }
+    static void encoder_read_static(lv_indev_t *indev_drv, lv_indev_data_t *data) {
+        CompactWifiBoardLCD *instance = static_cast<CompactWifiBoardLCD *>(indev_drv->user_data);
+        instance->encoder_read(indev_drv, data);
+    }
     //初始化编码器
     void InitializeEc11() {
         // 配置实例
@@ -159,25 +194,38 @@ private:
         };
 
         // 创建编码器对象
-        EC11Encoder encoder(cfg);
-        
+        ec11 = new EC11Encoder(cfg);
+        //创建按键
+        button_gpio_config_t button_config = {
+            .gpio_num = GPIO_NUM_20,
+            .active_level = static_cast<uint8_t>(1),
+        };
+        //初始化按键IO
+        button_gpio_init(&button_config);
+
         // 注册事件回调
-        encoder.registerEventCallback([](int pos) {
+        ec11->registerEventCallback([](int pos) {
             ESP_LOGI(TAG, "Position reached: %d", pos);
         });
 
-        // 主循环
-        while (true) {
-            encoder.pollEvents();
-            const int current = encoder.getCount();
-            if (current != 0) {
-                ESP_LOGI(TAG, "Current count: %d", current);
-                encoder.clearCount();
-            }
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
+        //注册输入事件回调
+        lv_indev_t * indev_encoder;
+        indev_encoder = lv_indev_create();
+        lv_indev_set_user_data(indev_encoder, this);
+        lv_indev_set_type(indev_encoder, LV_INDEV_TYPE_ENCODER);
+        lv_indev_set_read_cb(indev_encoder, encoder_read_static);
+        xTaskCreate([](void* arg) {
+        CompactWifiBoardLCD* board = static_cast<CompactWifiBoardLCD*>(arg);
+        board->lvindev_loop();
+    }, "lvindev_loop", 4096, this, 3, nullptr); 
 
+        ESP_LOGI(TAG, "绑定输入设备");
+
+        //获得lvgl的组，并且与输入设备关联
+        lv_group_t* group = display_->GetGroup();
+        lv_indev_set_group(indev_encoder, group);
     } 
+
     void InitializeButtons() {
         boot_button_.OnClick([this]() {
             auto& app = Application::GetInstance();

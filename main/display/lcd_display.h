@@ -35,6 +35,8 @@ public:
     ~LcdDisplay();
     virtual void SetEmotion(const char* emotion) override;
     virtual void SetIcon(const char* icon) override;
+    //返回一个基类组
+    lv_group_t* GetGroup() { return group_; }
 };
 
 // RGB LCD显示器

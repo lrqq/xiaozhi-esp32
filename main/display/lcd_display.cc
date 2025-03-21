@@ -258,6 +258,38 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_text_color(low_battery_label, lv_color_white(), 0);
     lv_obj_center(low_battery_label);
     lv_obj_add_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN);
+
+
+    // 创建第一个按键
+    lv_obj_t* btn1 = lv_btn_create(container_);  // 在 screen 上创建按键
+    lv_obj_set_size(btn1, 20, 20);          // 按键大小
+    lv_obj_align(btn1, LV_ALIGN_CENTER, -60, 0);  // 按键位置（左侧居中偏移）
+    lv_obj_t* btn1_label = lv_label_create(btn1);
+    lv_label_set_text(btn1_label, "1");    // 按键文字
+    lv_obj_center(btn1_label);                   // 按键文字居中
+
+    // 创建第二个按键
+    lv_obj_t* btn2 = lv_btn_create(container_);
+    lv_obj_set_size(btn2, 20, 20);
+    lv_obj_align(btn2, LV_ALIGN_CENTER, 60, 0);  // 按键位置（右侧居中偏移）
+    lv_obj_t* btn2_label = lv_label_create(btn2);
+    lv_label_set_text(btn2_label, "2");
+    lv_obj_center(btn2_label);
+
+
+    lv_obj_add_event_cb(btn1, [](lv_event_t* e){
+        ESP_LOGI(TAG, "button1 click");
+    }
+    , LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(btn2, [](lv_event_t* e){
+        ESP_LOGI(TAG, "button2 click");
+    }
+    , LV_EVENT_CLICKED, NULL);
+
+    //将两个设备设置可以通过编码器调节,先设置好组，然后再其他地方和输入设备关联
+    group_ = lv_group_create();
+    lv_group_add_obj(group_, btn1);
+    lv_group_add_obj(group_, btn2);
 }
 
 void LcdDisplay::SetEmotion(const char* emotion) {
