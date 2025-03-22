@@ -6,6 +6,7 @@
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
 #include <font_emoji.h>
+#include <wifi_board.h>
 
 #include <atomic>
 
@@ -26,6 +27,7 @@ protected:
     virtual bool Lock(int timeout_ms = 0) override;
     virtual void Unlock() override;
 
+
 protected:
     // 添加protected构造函数
     LcdDisplay(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel, DisplayFonts fonts)
@@ -37,6 +39,8 @@ public:
     virtual void SetIcon(const char* icon) override;
     //返回一个基类组
     lv_group_t* GetGroup() { return group_; }
+    //添加一个函数来对lvgl的部件绑定回调函数
+    virtual void BindCallBack(WifiBoard* board);
 };
 
 // RGB LCD显示器

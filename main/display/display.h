@@ -44,6 +44,8 @@ protected:
     lv_obj_t *battery_label_ = nullptr;
     lv_obj_t* chat_message_label_ = nullptr;
     lv_obj_t* low_battery_popup_ = nullptr;
+    lv_obj_t *volume_label_ = nullptr;
+    lv_obj_t *setting_label_ = nullptr;
 
     //输入设备要绑定的组
     lv_group_t* group_;

@@ -1,4 +1,7 @@
 #include "lcd_display.h"
+#include "application.h"
+#include "wifi_board.h"
+#include <wifi_station.h>
 
 #include <vector>
 #include <font_awesome_symbols.h>
@@ -195,6 +198,8 @@ void LcdDisplay::SetupUI() {
     status_bar_ = lv_obj_create(container_);
     lv_obj_set_size(status_bar_, LV_HOR_RES, fonts_.text_font->line_height);
     lv_obj_set_style_radius(status_bar_, 0, 0);
+    lv_obj_add_flag(status_bar_, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+    lv_obj_set_style_border_width(status_bar_, 1, LV_STATE_FOCUSED);
     
     /* Content */
     content_ = lv_obj_create(container_);
@@ -209,6 +214,15 @@ void LcdDisplay::SetupUI() {
     emotion_label_ = lv_label_create(content_);
     lv_obj_set_style_text_font(emotion_label_, &font_awesome_30_4, 0);
     lv_label_set_text(emotion_label_, FONT_AWESOME_AI_CHIP);
+    lv_obj_add_flag(emotion_label_, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_border_width(emotion_label_, 1, LV_STATE_FOCUSED);
+    lv_obj_set_style_translate_y(emotion_label_, -60, 0);  // 水平方向偏移 10 像素
+    //lv_color_t color
+    //{
+    //    .red = 255
+    //};
+    //lv_obj_set_style_border_color(emotion_label_, color, LV_STATE_FOCUSED);  // 设置焦点状态
+
 
     chat_message_label_ = lv_label_create(content_);
     lv_label_set_text(chat_message_label_, "");
@@ -227,6 +241,7 @@ void LcdDisplay::SetupUI() {
     network_label_ = lv_label_create(status_bar_);
     lv_label_set_text(network_label_, "");
     lv_obj_set_style_text_font(network_label_, fonts_.icon_font, 0);
+    lv_obj_set_style_translate_x(network_label_, 25, 0);  // 水平方向偏移 10 像素
 
     notification_label_ = lv_label_create(status_bar_);
     lv_obj_set_flex_grow(notification_label_, 1);
@@ -243,6 +258,20 @@ void LcdDisplay::SetupUI() {
     lv_label_set_text(mute_label_, "");
     lv_obj_set_style_text_font(mute_label_, fonts_.icon_font, 0);
 
+    setting_label_ = lv_label_create(status_bar_);
+    lv_label_set_text(setting_label_, FONT_AWESOME_GEAR);
+    lv_obj_set_style_text_font(setting_label_, fonts_.icon_font, 0);
+    lv_obj_set_style_translate_x(setting_label_, -40, 0);  // 水平方向偏移 10 像素
+    lv_obj_add_flag(setting_label_, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_border_width(setting_label_, 1, LV_STATE_FOCUSED);
+
+    volume_label_ = lv_label_create(status_bar_);
+    lv_label_set_text(volume_label_, FONT_AWESOME_VOLUME_HIGH);
+    lv_obj_set_style_text_font(volume_label_, fonts_.icon_font, 0);
+    lv_obj_set_style_translate_x(volume_label_, -25, 0);  // 水平方向偏移 10 像素
+    lv_obj_add_flag(volume_label_, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_border_width(volume_label_, 1, LV_STATE_FOCUSED);
+
     battery_label_ = lv_label_create(status_bar_);
     lv_label_set_text(battery_label_, "");
     lv_obj_set_style_text_font(battery_label_, fonts_.icon_font, 0);
@@ -258,39 +287,42 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_text_color(low_battery_label, lv_color_white(), 0);
     lv_obj_center(low_battery_label);
     lv_obj_add_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN);
+}
 
-
-    // 创建第一个按键
-    lv_obj_t* btn1 = lv_btn_create(container_);  // 在 screen 上创建按键
-    lv_obj_set_size(btn1, 20, 20);          // 按键大小
-    lv_obj_align(btn1, LV_ALIGN_CENTER, -60, 0);  // 按键位置（左侧居中偏移）
-    lv_obj_t* btn1_label = lv_label_create(btn1);
-    lv_label_set_text(btn1_label, "1");    // 按键文字
-    lv_obj_center(btn1_label);                   // 按键文字居中
-
-    // 创建第二个按键
-    lv_obj_t* btn2 = lv_btn_create(container_);
-    lv_obj_set_size(btn2, 20, 20);
-    lv_obj_align(btn2, LV_ALIGN_CENTER, 60, 0);  // 按键位置（右侧居中偏移）
-    lv_obj_t* btn2_label = lv_label_create(btn2);
-    lv_label_set_text(btn2_label, "2");
-    lv_obj_center(btn2_label);
-
-
-    lv_obj_add_event_cb(btn1, [](lv_event_t* e){
-        ESP_LOGI(TAG, "button1 click");
-    }
-    , LV_EVENT_CLICKED, NULL);
-    lv_obj_add_event_cb(btn2, [](lv_event_t* e){
-        ESP_LOGI(TAG, "button2 click");
+//给lvgl部件绑定回调
+void LcdDisplay::BindCallBack(WifiBoard* board) {
+    lv_obj_add_event_cb(setting_label_, [](lv_event_t* e){
+        ESP_LOGI(TAG, "setting_label_ click");
+        // 获取触发事件的对象
+        lv_obj_t* obj = (lv_obj_t*)lv_event_get_target(e);
+        lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
     }
     , LV_EVENT_CLICKED, NULL);
 
+    lv_obj_add_event_cb(volume_label_, [](lv_event_t* e){
+        ESP_LOGI(TAG, "volume_label_ click");
+    }
+    , LV_EVENT_CLICKED, NULL);
+
+    lv_obj_add_event_cb(emotion_label_, [](lv_event_t* e){
+            ESP_LOGI(TAG, "emotion_label_ click");
+            auto& app = Application::GetInstance();
+            auto* board = static_cast<WifiBoard*>(lv_event_get_user_data(e));
+            if (app.GetDeviceState() == kDeviceStateStarting && !WifiStation::GetInstance().IsConnected()) {
+               board->ResetWifiConfiguration();
+            }
+            app.ToggleChatState();
+    }
+    , LV_EVENT_CLICKED, board);
     //将两个设备设置可以通过编码器调节,先设置好组，然后再其他地方和输入设备关联
     group_ = lv_group_create();
-    lv_group_add_obj(group_, btn1);
-    lv_group_add_obj(group_, btn2);
+    lv_group_add_obj(group_, emotion_label_);
+    lv_group_add_obj(group_, setting_label_);
+    lv_group_add_obj(group_, volume_label_);
+
 }
+
+
 
 void LcdDisplay::SetEmotion(const char* emotion) {
     struct Emotion {

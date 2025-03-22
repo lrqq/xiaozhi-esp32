@@ -152,6 +152,7 @@ private:
                                         .icon_font = &font_awesome_16_4,
                                         .emoji_font = DISPLAY_HEIGHT >= 240 ? font_emoji_64_init() : font_emoji_32_init(),
                                     });
+        display_->BindCallBack(this);
     }
 
 
