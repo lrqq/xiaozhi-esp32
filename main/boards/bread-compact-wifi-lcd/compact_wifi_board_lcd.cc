@@ -218,7 +218,7 @@ private:
         xTaskCreate([](void* arg) {
         CompactWifiBoardLCD* board = static_cast<CompactWifiBoardLCD*>(arg);
         board->lvindev_loop();
-    }, "lvindev_loop", 4096, this, 3, nullptr); 
+    }, "lvindev_loop", 4096, this, 4, nullptr); 
 
         ESP_LOGI(TAG, "绑定输入设备");
 

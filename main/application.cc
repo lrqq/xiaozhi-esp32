@@ -61,7 +61,17 @@ Application::~Application() {
     }
     vEventGroupDelete(event_group_);
 }
-
+//这里是可以用来调试时候打印日志
+//void Application::debug() {
+//    while(true)
+//    {
+//        char log_msg[100];
+//        if (xQueueReceive(log_queue, log_msg, portMAX_DELAY))
+//        {
+//            ESP_LOGI(TAG, "debug %s", log_msg);
+//        }
+//    }
+//}
 void Application::CheckNewVersion() {
     auto& board = Board::GetInstance();
     auto display = board.GetDisplay();
@@ -317,6 +327,15 @@ void Application::Ectest() {
 void Application::Start() {
     auto& board = Board::GetInstance();
     SetDeviceState(kDeviceStateStarting);
+
+    //用于调试，接受从中断传过来的调试日志信息
+    log_queue = xQueueCreate(10, sizeof(char) * 100);
+    xTaskCreate([](void* arg) {
+        Application* app = (Application*)arg;
+        app->debug();
+        vTaskDelete(NULL);
+    }, "debug", 4096, this, 3, nullptr);
+
 
     /* Setup the display */
     auto display = board.GetDisplay();

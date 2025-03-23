@@ -54,6 +54,7 @@ public:
     Application(const Application&) = delete;
     Application& operator=(const Application&) = delete;
 
+    void debug();
     void Ectest();
     void Start();
     DeviceState GetDeviceState() const { return device_state_; }
@@ -93,6 +94,9 @@ private:
     bool aborted_ = false;
     bool voice_detected_ = false;
     int clock_ticks_ = 0;
+
+    //用于调试
+    //QueueHandle_t log_queue;
 
     // Audio encode / decode
     BackgroundTask* background_task_ = nullptr;
